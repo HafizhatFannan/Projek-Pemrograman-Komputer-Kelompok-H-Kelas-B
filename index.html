@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Peta Tempat Makan Murah – UNDIP Tembalang</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@2.44.0/tabler-icons.min.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Space+Grotesk:wght@300;400;500;700&display=swap');
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --primary: #1a6b3c;
+    --primary-light: #2d9e5f;
+    --primary-bg: #e8f5ee;
+    --accent: #f59e0b;
+    --accent-bg: #fef3c7;
+    --red: #dc2626;
+    --red-bg: #fee2e2;
+    --surface: #ffffff;
+    --bg: #f0f4f1;
+    --text: #1a2e1f;
+    --text-muted: #5a7263;
+    --border: #c8ddd0;
+    --shadow: 0 2px 12px rgba(26,107,60,0.10);
+    --radius: 12px;
+  }
+
+  body {
+    font-family: 'Plus Jakarta Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* HEADER */
+  .header {
+    background: var(--primary);
+    color: #fff;
+    padding: 0 24px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    height: 60px;
+    position: sticky; top: 0; z-index: 1000;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.18);
+  }
+  .header-title {
+    display: flex; align-items: center; gap: 10px;
+    font-family: 'Space Grotesk', sans-serif;
+    font-size: 17px; font-weight: 700; letter-spacing: -0.3px;
+  }
+  .header-title i { font-size: 22px; }
+  .header-subtitle { font-size: 12px; font-weight: 400; opacity: 0.75; }
+  .header-badge {
+    background: var(--accent); color: #7c4400;
+    font-size: 11px; font-weight: 700; padding: 4px 10px;
+    border-radius: 20px; letter-spacing: 0.3px;
+  }
+
+  /* LAYOUT */
+  .app-body {
+    display: flex; flex: 1; height: calc(100vh - 60px);
+    overflow: hidden;
+  }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 340px; min-width: 300px;
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow: hidden;
+  }
+  .sidebar-top {
+    padding: 14px 16px 10px;
+    border-bottom: 1px solid var(--border);
+    background: #f9fcfa;
+  }
+  .search-wrap {
+    display: flex; align-items: center; gap: 8px;
+    background: var(--surface); border: 1.5px solid var(--border);
+    border-radius: 8px; padding: 0 10px; height: 38px;
+    transition: border-color 0.2s;
+  }
+  .search-wrap:focus-within { border-color: var(--primary); }
+  .search-wrap i { color: var(--text-muted); font-size: 16px; }
+  .search-wrap input {
+    border: none; outline: none; background: transparent;
+    font-family: inherit; font-size: 13.5px; color: var(--text);
+    width: 100%;
+  }
+  .filter-row {
+    display: flex; gap: 6px; margin-top: 10px; flex-wrap: wrap;
+  }
+  .filter-btn {
+    font-size: 12px; font-weight: 500; padding: 5px 12px;
+    border-radius: 20px; border: 1.5px solid var(--border);
+    background: var(--surface); color: var(--text-muted);
+    cursor: pointer; transition: all 0.15s; font-family: inherit;
+  }
+  .filter-btn.active, .filter-btn:hover {
+    background: var(--primary); color: #fff; border-color: var(--primary);
+  }
+  .sort-row {
+    display: flex; align-items: center; gap: 8px; margin-top: 8px;
+  }
+  .sort-label { font-size: 12px; color: var(--text-muted); }
+  .sort-select {
+    font-size: 12px; font-family: inherit; border: 1px solid var(--border);
+    border-radius: 6px; padding: 3px 8px; color: var(--text);
+    background: var(--surface); outline: none; cursor: pointer;
+  }
+  .result-count {
+    font-size: 12px; color: var(--text-muted); margin-left: auto;
+    font-weight: 500;
+  }
+
+  /* LIST */
+  .place-list {
+    flex: 1; overflow-y: auto; padding: 10px 10px;
+  }
+  .place-list::-webkit-scrollbar { width: 5px; }
+  .place-list::-webkit-scrollbar-track { background: #f0f4f1; }
+  .place-list::-webkit-scrollbar-thumb { background: #c0d5c8; border-radius: 4px; }
+
+  .place-card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 12px 13px;
+    margin-bottom: 8px;
+    cursor: pointer;
+    transition: all 0.18s;
+    position: relative;
+  }
+  .place-card:hover { border-color: var(--primary); box-shadow: var(--shadow); transform: translateY(-1px); }
+  .place-card.active { border-color: var(--primary); background: var(--primary-bg); box-shadow: var(--shadow); }
+
+  .card-row1 { display: flex; align-items: flex-start; justify-content: space-between; gap: 8px; }
+  .card-name { font-size: 13.5px; font-weight: 600; color: var(--text); line-height: 1.3; }
+  .price-badge {
+    font-size: 11px; font-weight: 700; padding: 3px 8px;
+    border-radius: 6px; white-space: nowrap; flex-shrink: 0;
+  }
+  .price-cheap { background: #dcfce7; color: #15803d; }
+  .price-mid { background: var(--accent-bg); color: #92400e; }
+  .price-pricey { background: var(--red-bg); color: var(--red); }
+
+  .card-row2 { display: flex; align-items: center; gap: 6px; margin-top: 5px; }
+  .category-tag {
+    font-size: 11px; padding: 2px 8px; border-radius: 12px;
+    background: #f0f4f1; color: var(--text-muted); font-weight: 500;
+  }
+  .card-rating { font-size: 12px; color: #f59e0b; margin-left: auto; display: flex; align-items: center; gap: 3px; }
+  .card-rating span { color: var(--text-muted); }
+
+  .card-row3 { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+  .card-info { font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 4px; }
+  .card-info i { font-size: 14px; }
+
+  .dist-bar-wrap { margin-top: 7px; }
+  .dist-bar-label { font-size: 11px; color: var(--text-muted); margin-bottom: 3px; display: flex; justify-content: space-between; }
+  .dist-bar-bg { background: #e5e7eb; border-radius: 4px; height: 5px; }
+  .dist-bar-fill { height: 5px; border-radius: 4px; background: var(--primary); transition: width 0.4s; }
+
+  /* MAP */
+  #map {
+    flex: 1;
+    z-index: 1;
+  }
+
+  /* POPUP CUSTOM */
+  .popup-box { font-family: 'Plus Jakarta Sans', sans-serif; min-width: 210px; }
+  .popup-name { font-size: 14px; font-weight: 700; color: #1a2e1f; margin-bottom: 4px; line-height: 1.3; }
+  .popup-cat { font-size: 11px; color: #5a7263; margin-bottom: 6px; }
+  .popup-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 10px; }
+  .popup-item { font-size: 12px; color: #374151; display: flex; align-items: center; gap: 4px; }
+  .popup-item i { color: #1a6b3c; font-size: 14px; }
+  .popup-price-range { font-size: 13px; font-weight: 700; color: #15803d; margin-top: 6px; }
+  .popup-menu { font-size: 11.5px; color: #5a7263; margin-top: 4px; font-style: italic; }
+
+  /* LEGEND */
+  .legend {
+    position: absolute; bottom: 28px; right: 16px; z-index: 999;
+    background: rgba(255,255,255,0.97); border: 1px solid var(--border);
+    border-radius: 10px; padding: 10px 13px; min-width: 150px;
+    box-shadow: var(--shadow);
+    font-size: 12px;
+  }
+  .legend-title { font-weight: 700; color: var(--text); margin-bottom: 8px; font-size: 12px; }
+  .legend-item { display: flex; align-items: center; gap: 8px; margin-bottom: 5px; color: var(--text-muted); }
+  .legend-dot { width: 14px; height: 14px; border-radius: 50%; border: 2px solid #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.2); flex-shrink: 0; }
+
+  /* STATS BAR */
+  .stats-bar {
+    position: absolute; top: 68px; left: 350px; z-index: 999;
+    display: flex; gap: 8px;
+  }
+  .stat-chip {
+    background: rgba(255,255,255,0.96); border: 1px solid var(--border);
+    border-radius: 20px; padding: 5px 13px; font-size: 12px;
+    font-weight: 600; color: var(--text);
+    display: flex; align-items: center; gap: 5px;
+    box-shadow: var(--shadow);
+  }
+  .stat-chip i { font-size: 15px; color: var(--primary); }
+
+  .leaflet-popup-content-wrapper { border-radius: 12px !important; box-shadow: 0 4px 20px rgba(0,0,0,0.15) !important; }
+  .leaflet-popup-tip-container { display: none; }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <div class="header-title">
+    <i class="ti ti-map-pin-filled"></i>
+    <div>
+      <div>Peta Tempat Makan Murah</div>
+      <div class="header-subtitle">Universitas Diponegoro – Tembalang, Semarang</div>
+    </div>
+  </div>
+  <div class="header-badge">🎓 Kantong Mahasiswa</div>
+</div>
+
+<div class="app-body">
+
+  <!-- SIDEBAR -->
+  <div class="sidebar">
+    <div class="sidebar-top">
+      <div class="search-wrap">
+        <i class="ti ti-search"></i>
+        <input id="searchInput" type="text" placeholder="Cari nama tempat makan...">
+      </div>
+      <div class="filter-row">
+        <button class="filter-btn active" onclick="filterBy('all', this)">Semua</button>
+        <button class="filter-btn" onclick="filterBy('burjo', this)">Burjo</button>
+        <button class="filter-btn" onclick="filterBy('warung', this)">Warung</button>
+        <button class="filter-btn" onclick="filterBy('angkringan', this)">Angkringan</button>
+        <button class="filter-btn" onclick="filterBy('mie', this)">Mie/Bakso</button>
+        <button class="filter-btn" onclick="filterBy('nasi', this)">Nasi</button>
+      </div>
+      <div class="sort-row">
+        <span class="sort-label">Urutkan:</span>
+        <select class="sort-select" onchange="sortBy(this.value)">
+          <option value="distance">Jarak Terdekat</option>
+          <option value="price">Harga Terendah</option>
+          <option value="rating">Rating Tertinggi</option>
+          <option value="name">Nama A-Z</option>
+        </select>
+        <span class="result-count" id="resultCount">28 tempat</span>
+      </div>
+    </div>
+    <div class="place-list" id="placeList"></div>
+  </div>
+
+  <!-- MAP -->
+  <div style="position:relative; flex:1; display:flex;">
+    <div id="map"></div>
+
+    <!-- STATS -->
+    <div class="stats-bar" id="statsBar">
+      <div class="stat-chip"><i class="ti ti-map-pin"></i> <span id="statTotal">28</span> Lokasi</div>
+      <div class="stat-chip"><i class="ti ti-currency-rupiah"></i> Rata-rata Rp <span id="statAvg">0</span></div>
+      <div class="stat-chip"><i class="ti ti-walk"></i> Terdekat <span id="statNearest">0</span>m</div>
+    </div>
+
+    <!-- LEGEND -->
+    <div class="legend">
+      <div class="legend-title">Harga Rata-rata</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#16a34a"></div>Murah (< 10rb)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#f59e0b"></div>Sedang (10-20rb)</div>
+      <div class="legend-item"><div class="legend-dot" style="background:#dc2626"></div>Agak Mahal (>20rb)</div>
+      <div style="margin-top:8px; padding-top:8px; border-top:1px solid #e5e7eb;">
+        <div class="legend-title">Jenis</div>
+        <div class="legend-item"><i class="ti ti-building-store" style="color:#1a6b3c; font-size:16px;"></i>Burjo/Warung</div>
+        <div class="legend-item"><i class="ti ti-tools-kitchen-2" style="color:#1a6b3c; font-size:16px;"></i>Rumah Makan</div>
+        <div class="legend-item"><i class="ti ti-bowl-chopsticks" style="color:#1a6b3c; font-size:16px;"></i>Mie/Bakso</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const UNDIP_LAT = -7.0510;
+const UNDIP_LNG = 110.4381;
+
+function haversine(lat1, lng1, lat2, lng2) {
+  const R = 6371000;
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLng = (lng2 - lng1) * Math.PI / 180;
+  const a = Math.sin(dLat/2)**2 + Math.cos(lat1*Math.PI/180)*Math.cos(lat2*Math.PI/180)*Math.sin(dLng/2)**2;
+  return Math.round(R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+}
+
+const places = [
+  { id:1,  name:"Burjo Mas Bambang (Tembalang)", cat:"burjo",     lat:-7.0492, lng:110.4368, harga:7000,  rating:4.1, menu:"Indomie, nasi telur, susu, teh",       buka:"24 jam" },
+  { id:2,  name:"Burjo Cahaya Baru",             cat:"burjo",     lat:-7.0478, lng:110.4355, harga:8000,  rating:4.0, menu:"Indomie goreng, nasi telur, kopi",     buka:"06.00–02.00" },
+  { id:3,  name:"Warung Makan Bu Ning",          cat:"warung",    lat:-7.0523, lng:110.4372, harga:12000, rating:4.4, menu:"Nasi rames, sayur lodeh, lauk pilihan", buka:"07.00–21.00" },
+  { id:4,  name:"Angkringan Pak Dhe",            cat:"angkringan",lat:-7.0501, lng:110.4395, harga:6000,  rating:4.3, menu:"Nasi kucing, sate usus, wedang",        buka:"17.00–02.00" },
+  { id:5,  name:"Mie Ayam Bakso Pak Ndut",       cat:"mie",       lat:-7.0516, lng:110.4361, harga:13000, rating:4.5, menu:"Mie ayam, bakso, es teh",               buka:"08.00–17.00" },
+  { id:6,  name:"Warung Nasi Soto Kudus Bu Siti",cat:"nasi",      lat:-7.0488, lng:110.4388, harga:11000, rating:4.6, menu:"Soto kudus, nasi pecel, gorengan",      buka:"06.00–15.00" },
+  { id:7,  name:"Warung Seafood & Nasi Goreng Mas Eko", cat:"warung", lat:-7.0534, lng:110.4342, harga:15000, rating:4.2, menu:"Nasi goreng, mie goreng, lele",  buka:"10.00–22.00" },
+  { id:8,  name:"Bakso Malang Cak Wi",           cat:"mie",       lat:-7.0469, lng:110.4402, harga:12000, rating:4.4, menu:"Bakso urat, mie pangsit, es jeruk",     buka:"09.00–21.00" },
+  { id:9,  name:"Angkringan Hik Mas Agus",       cat:"angkringan",lat:-7.0548, lng:110.4368, harga:5000,  rating:4.2, menu:"Nasi kucing, gorengan, wedang jahe",    buka:"17.00–01.00" },
+  { id:10, name:"Burjo Pojok Tembalang",         cat:"burjo",     lat:-7.0505, lng:110.4352, harga:8500,  rating:4.0, menu:"Indomie, nasi telur, minuman susu",     buka:"24 jam" },
+  { id:11, name:"Warung Sate Kambing Pak Broto", cat:"warung",    lat:-7.0458, lng:110.4378, harga:20000, rating:4.7, menu:"Sate kambing, gule, nasi",              buka:"11.00–21.00" },
+  { id:12, name:"Nasi Pecel Bu Atun Tembalang",  cat:"nasi",      lat:-7.0529, lng:110.4395, harga:9000,  rating:4.5, menu:"Nasi pecel, rempeyek, peyek kacang",    buka:"06.00–14.00" },
+  { id:13, name:"Depot Mie Ayam Mas Yanto",      cat:"mie",       lat:-7.0476, lng:110.4415, harga:13000, rating:4.3, menu:"Mie ayam ceker, wonton, pangsit goreng",buka:"08.00–20.00" },
+  { id:14, name:"Warung Makan Bu Eko (Tembalang)",cat:"warung",   lat:-7.0540, lng:110.4350, harga:11000, rating:4.2, menu:"Nasi lauk pauk, sayur asem, tempe",     buka:"07.00–20.00" },
+  { id:15, name:"Burjo Tembalang Baru",          cat:"burjo",     lat:-7.0484, lng:110.4342, harga:8000,  rating:3.9, menu:"Indomie, kopi, teh, nasi telur",        buka:"24 jam" },
+  { id:16, name:"Angkringan Mbak Wati",          cat:"angkringan",lat:-7.0511, lng:110.4408, harga:6000,  rating:4.1, menu:"Nasi kucing teri, tahu bacem, tempe",   buka:"16.00–00.00" },
+  { id:17, name:"Bakso & Mie Ayam Pak Slamet",  cat:"mie",       lat:-7.0522, lng:110.4418, harga:12000, rating:4.3, menu:"Bakso campur, mie ayam komplit",         buka:"08.00–21.00" },
+  { id:18, name:"Warung Nasi Bu Sumiyati",       cat:"nasi",      lat:-7.0495, lng:110.4425, harga:10000, rating:4.4, menu:"Nasi sayur bening, lauk pilihan",       buka:"06.00–16.00" },
+  { id:19, name:"Warung Gorengan & Kopi Pak Min",cat:"warung",    lat:-7.0467, lng:110.4365, harga:5000,  rating:4.0, menu:"Gorengan, kopi hitam, teh manis",       buka:"05.00–20.00" },
+  { id:20, name:"Mie Goreng Jawa Mas Rohmat",   cat:"mie",       lat:-7.0555, lng:110.4378, harga:11000, rating:4.2, menu:"Mie goreng jawa, nasi goreng kampung",   buka:"17.00–23.00" },
+  { id:21, name:"Warung Soto Betawi Mas Dedi",  cat:"nasi",      lat:-7.0481, lng:110.4330, harga:14000, rating:4.5, menu:"Soto betawi, es campur, kerupuk",        buka:"08.00–17.00" },
+  { id:22, name:"Angkringan Jl. Baskoro (UNDIP)",cat:"angkringan",lat:-7.0503, lng:110.4362, harga:5500,  rating:4.3, menu:"Nasi kucing, mendoan, wedang uwuh",     buka:"16.00–01.00" },
+  { id:23, name:"Burjo & Lalapan Mas Wahyu",    cat:"burjo",     lat:-7.0519, lng:110.4385, harga:10000, rating:4.0, menu:"Ayam lalapan, bebek bakar, indomie",     buka:"10.00–24.00" },
+  { id:24, name:"RM Padang Sederhana Tembalang",cat:"nasi",      lat:-7.0462, lng:110.4395, harga:16000, rating:4.4, menu:"Nasi padang, rendang, ayam pop",         buka:"08.00–21.00" },
+  { id:25, name:"Warung Nasi Goreng Spesial Bu Yani",cat:"warung",lat:-7.0538, lng:110.4410, harga:12000, rating:4.1, menu:"Nasi goreng seafood, cap cay",           buka:"10.00–22.00" },
+  { id:26, name:"Mie Ramen & Dimsum Mas Joko",  cat:"mie",       lat:-7.0470, lng:110.4350, harga:15000, rating:4.2, menu:"Ramen, dimsum, gyoza goreng",             buka:"11.00–22.00" },
+  { id:27, name:"Angkringan Pojok Ngesrep",     cat:"angkringan",lat:-7.0490, lng:110.4355, harga:6500,  rating:4.0, menu:"Nasi kucing, sate telur, kopi jos",      buka:"18.00–02.00" },
+  { id:28, name:"Warung Seafood Bakar Mas Budi",cat:"warung",     lat:-7.0545, lng:110.4388, harga:18000, rating:4.3, menu:"Ikan bakar, cumi, udang, nasi putih",    buka:"12.00–22.00" },
+];
+
+places.forEach(p => { p.jarak = haversine(UNDIP_LAT, UNDIP_LNG, p.lat, p.lng); });
+
+let filtered = [...places];
+let currentFilter = 'all';
+let currentSort = 'distance';
+let activeId = null;
+
+function getColor(harga) {
+  if (harga < 10000) return '#16a34a';
+  if (harga <= 20000) return '#f59e0b';
+  return '#dc2626';
+}
+function getPriceLabel(harga) {
+  if (harga < 10000) return { label:`Rp ${(harga/1000).toFixed(0)}rb-an`, cls:'price-cheap' };
+  if (harga <= 20000) return { label:`Rp ${(harga/1000).toFixed(0)}rb-an`, cls:'price-mid' };
+  return { label:`Rp ${(harga/1000).toFixed(0)}rb-an`, cls:'price-pricey' };
+}
+function stars(r) {
+  return '★'.repeat(Math.round(r)) + '☆'.repeat(5-Math.round(r));
+}
+
+// MAP
+const map = L.map('map', { center:[UNDIP_LAT, UNDIP_LNG], zoom:15, zoomControl:true });
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+  attribution:'© OpenStreetMap', maxZoom:19
+}).addTo(map);
+
+// UNDIP marker
+const undipIcon = L.divIcon({ html:`<div style="background:#1a6b3c;color:#fff;border-radius:50%;width:36px;height:36px;display:flex;align-items:center;justify-content:center;font-size:18px;border:3px solid #fff;box-shadow:0 2px 8px rgba(0,0,0,0.3)">🎓</div>`, iconSize:[36,36], iconAnchor:[18,18], className:'' });
+L.marker([UNDIP_LAT, UNDIP_LNG], { icon: undipIcon }).addTo(map)
+  .bindPopup('<b style="font-family:Plus Jakarta Sans;font-size:14px;color:#1a6b3c">Universitas Diponegoro (Gerbang Utama)</b><br><span style="font-size:12px;color:#5a7263">Jl. Prof. Sudarto, Tembalang, Semarang</span>');
+
+const markerMap = {};
+
+function createMarker(p) {
+  const col = getColor(p.harga);
+  const icon = L.divIcon({
+    html:`<div style="background:${col};color:#fff;border-radius:50%;width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:13px;border:2.5px solid #fff;box-shadow:0 2px 6px rgba(0,0,0,0.25);cursor:pointer;transition:transform 0.15s" id="marker-${p.id}">🍜</div>`,
+    iconSize:[30,30], iconAnchor:[15,15], className:''
+  });
+  const marker = L.marker([p.lat, p.lng], { icon })
+    .addTo(map)
+    .bindPopup(popupHTML(p), { maxWidth:270 });
+  marker.on('click', () => selectPlace(p.id));
+  return marker;
+}
+
+places.forEach(p => { markerMap[p.id] = createMarker(p); });
+
+function popupHTML(p) {
+  const pc = getPriceLabel(p.harga);
+  return `<div class="popup-box">
+    <div class="popup-name">${p.name}</div>
+    <div class="popup-cat">${catLabel(p.cat)}</div>
+    <div class="popup-grid">
+      <div class="popup-item"><i class="ti ti-walk"></i>${p.jarak} m dari UNDIP</div>
+      <div class="popup-item"><i class="ti ti-clock"></i>${p.buka}</div>
+      <div class="popup-item"><i class="ti ti-star-filled" style="color:#f59e0b"></i>${p.rating} / 5</div>
+    </div>
+    <div class="popup-price-range">±${pc.label} / orang</div>
+    <div class="popup-menu">Menu: ${p.menu}</div>
+  </div>`;
+}
+
+function catLabel(cat) {
+  const m = { burjo:'Burjo / Warung Indomie', warung:'Warung Makan', angkringan:'Angkringan / HIK', mie:'Mie & Bakso', nasi:'Rumah Makan / Nasi' };
+  return m[cat] || cat;
+}
+
+function renderList() {
+  const query = document.getElementById('searchInput').value.toLowerCase();
+  let list = places.filter(p => {
+    const catOk = currentFilter === 'all' || p.cat === currentFilter;
+    const nameOk = p.name.toLowerCase().includes(query);
+    return catOk && nameOk;
+  });
+  filtered = [...list];
+
+  if (currentSort === 'distance') list.sort((a,b) => a.jarak - b.jarak);
+  else if (currentSort === 'price') list.sort((a,b) => a.harga - b.harga);
+  else if (currentSort === 'rating') list.sort((a,b) => b.rating - a.rating);
+  else list.sort((a,b) => a.name.localeCompare(b.name));
+
+  document.getElementById('resultCount').textContent = list.length + ' tempat';
+
+  const minJarak = list.length ? Math.min(...list.map(p=>p.jarak)) : 0;
+  const maxJarak = list.length ? Math.max(...list.map(p=>p.jarak)) : 1;
+
+  const container = document.getElementById('placeList');
+  container.innerHTML = list.map(p => {
+    const pc = getPriceLabel(p.harga);
+    const pct = Math.round((p.jarak - minJarak) / (maxJarak - minJarak + 1) * 100);
+    return `<div class="place-card${p.id===activeId?' active':''}" onclick="selectPlace(${p.id})" id="card-${p.id}">
+      <div class="card-row1">
+        <div class="card-name">${p.name}</div>
+        <span class="price-badge ${pc.cls}">${pc.label}</span>
+      </div>
+      <div class="card-row2">
+        <span class="category-tag">${catLabel(p.cat)}</span>
+        <div class="card-rating">★ ${p.rating} <span>(${Math.round(p.rating*10+30)} ulasan)</span></div>
+      </div>
+      <div class="card-row3">
+        <div class="card-info"><i class="ti ti-walk"></i>${p.jarak} m</div>
+        <div class="card-info"><i class="ti ti-clock"></i>${p.buka}</div>
+      </div>
+      <div class="dist-bar-wrap">
+        <div class="dist-bar-label"><span>Jarak dari UNDIP</span><span>${p.jarak} m</span></div>
+        <div class="dist-bar-bg"><div class="dist-bar-fill" style="width:${pct}%;background:${getColor(p.harga)}"></div></div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // update stats
+  if (list.length) {
+    const avg = Math.round(list.reduce((s,p)=>s+p.harga,0)/list.length/1000);
+    const near = Math.min(...list.map(p=>p.jarak));
+    document.getElementById('statTotal').textContent = list.length;
+    document.getElementById('statAvg').textContent = avg + 'rb';
+    document.getElementById('statNearest').textContent = near;
+  }
+
+  // hide/show markers
+  places.forEach(p => {
+    const inList = list.some(l=>l.id===p.id);
+    if (!inList) map.removeLayer(markerMap[p.id]);
+    else if (!map.hasLayer(markerMap[p.id])) markerMap[p.id].addTo(map);
+  });
+}
+
+function selectPlace(id) {
+  activeId = id;
+  const p = places.find(x=>x.id===id);
+  map.flyTo([p.lat, p.lng], 17, { animate:true, duration:0.7 });
+  markerMap[id].openPopup();
+  renderList();
+  const card = document.getElementById('card-'+id);
+  if (card) card.scrollIntoView({ behavior:'smooth', block:'nearest' });
+}
+
+function filterBy(cat, btn) {
+  currentFilter = cat;
+  document.querySelectorAll('.filter-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+  renderList();
+}
+
+function sortBy(val) {
+  currentSort = val;
+  renderList();
+}
+
+document.getElementById('searchInput').addEventListener('input', renderList);
+
+renderList();
+</script>
+</body>
+</html>
