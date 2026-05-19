@@ -1,0 +1,1558 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Smart Parking Mall — Sistem Manajemen Parkir</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&family=Syne:wght@400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap');
+
+  :root {
+    --bg: #020402;
+    --surface: #09100f;
+    --surface2: #0f1614;
+    --surface3: #16201a;
+    --border: rgba(16,185,129,0.16);
+    --border2: rgba(16,185,129,0.26);
+    --text: #edfdf7;
+    --text2: #a0f1c0;
+    --text3: #7ed8a0;
+    --green: #10b981;
+    --green-dim: #047857;
+    --green-bg: rgba(16,185,129,0.08);
+    --red: #f87171;
+    --red-dim: #b91c1c;
+    --red-bg: rgba(248,113,113,0.12);
+    --amber: #facc15;
+    --amber-dim: #b45309;
+    --amber-bg: rgba(250,204,21,0.12);
+    --blue: #38bdf8;
+    --blue-dim: #0ea5e9;
+    --blue-bg: rgba(56,189,248,0.08);
+    --radius: 12px;
+    --radius-sm: 7px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Syne', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background:
+      radial-gradient(circle at top left, rgba(16,185,129,0.22), transparent 24%),
+      radial-gradient(circle at top right, rgba(16,185,129,0.18), transparent 22%),
+      radial-gradient(circle at bottom left, rgba(16,185,129,0.16), transparent 20%),
+      radial-gradient(circle at bottom right, rgba(16,185,129,0.14), transparent 18%);
+    z-index: 0;
+    pointer-events: none;
+  }
+
+  header, .app, .toast-area, .modal-overlay {
+    position: relative;
+    z-index: 1;
+  }
+
+  header {
+    background: rgba(2, 12, 5, 0.95);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(16,185,129,0.32);
+    padding: 0 28px;
+    height: 58px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+  }
+
+  .logo {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: 800;
+    font-size: 17px;
+    letter-spacing: -0.5px;
+  }
+
+  .logo-icon {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--green), #12a878);
+    border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 16px;
+  }
+
+  .logo span { color: var(--green); }
+
+  .header-right { display: flex; align-items: center; gap: 16px; }
+
+  .live-badge {
+    display: flex; align-items: center; gap: 6px;
+    background: var(--green-bg); border: 1px solid var(--green-dim);
+    color: var(--green); border-radius: 20px;
+    padding: 4px 12px; font-size: 11px; font-weight: 700; letter-spacing: 1px;
+  }
+
+  .live-dot {
+    width: 7px; height: 7px;
+    background: var(--green); border-radius: 50%;
+    animation: pulse 2s infinite;
+  }
+
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.3} }
+
+  .clock {
+    font-family: 'DM Mono', monospace;
+    font-size: 14px; color: var(--text2);
+  }
+
+  .app {
+    display: grid;
+    grid-template-columns: 270px 1fr;
+    height: calc(100vh - 58px);
+  }
+
+  aside {
+    background: rgba(14,18,32,0.80);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    overflow-y: auto;
+  }
+
+  .sidebar-section {
+    padding: 18px 16px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .sidebar-label {
+    font-size: 9px; font-weight: 700;
+    text-transform: uppercase; letter-spacing: 2px;
+    color: var(--text3); margin-bottom: 12px;
+  }
+
+  .stat-card {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 12px 14px;
+    margin-bottom: 8px;
+  }
+
+  .stat-top { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+  .stat-name { font-size: 11px; color: var(--text2); font-weight: 500; }
+  .stat-icon { font-size: 15px; }
+
+  .stat-val {
+    font-family: 'DM Mono', monospace;
+    font-size: 24px; font-weight: 500; line-height: 1;
+  }
+
+  .stat-sub { font-size: 11px; color: var(--text3); margin-top: 3px; }
+
+  .progress-bar {
+    height: 4px; background: var(--surface3);
+    border-radius: 3px; overflow: hidden; margin-top: 8px;
+  }
+
+  .progress-fill { height: 100%; border-radius: 3px; transition: width 0.6s ease; }
+
+  .clr-green { color: var(--green); }
+  .clr-red { color: var(--red); }
+  .clr-amber { color: var(--amber); }
+  .clr-blue { color: var(--blue); }
+
+  .tariff-box {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 14px;
+  }
+
+  .tariff-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 7px 0; border-bottom: 1px solid var(--border); font-size: 12px;
+  }
+
+  .tariff-row:last-child { border-bottom: none; }
+  .tariff-key { color: var(--text2); }
+  .tariff-val { font-family: 'DM Mono', monospace; font-weight: 500; color: var(--amber); }
+
+  .entry-log {
+    flex: 1; overflow-y: auto; padding: 16px;
+  }
+
+  .log-item {
+    display: flex; align-items: flex-start; gap: 10px;
+    padding: 9px 0; border-bottom: 1px solid var(--border);
+    animation: slideIn 0.3s ease;
+  }
+
+  @keyframes slideIn { from{opacity:0;transform:translateX(-8px)} to{opacity:1;transform:translateX(0)} }
+
+  .log-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    margin-top: 5px; flex-shrink: 0;
+  }
+
+  .log-text { font-size: 12px; line-height: 1.5; }
+  .log-plate { font-family: 'DM Mono', monospace; font-weight: 500; font-size: 12px; }
+  .log-time { font-size: 10px; color: var(--text3); margin-top: 2px; }
+
+  main { display: flex; flex-direction: column; overflow: hidden; }
+
+  .hero-banner {
+    position: relative;
+    display: grid;
+    grid-template-columns: 1.2fr 0.8fr;
+    gap: 8px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 10px 12px;
+    margin: 2px 24px 6px;
+    box-shadow: 0 10px 18px rgba(15,23,42,0.05);
+    overflow: hidden;
+    align-items: stretch;
+    height: min(33vh, 220px);
+    max-height: 220px;
+  }
+
+  .hero-banner::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at top right, rgba(31,224,160,0.16), transparent 30%);
+    pointer-events: none;
+  }
+
+  .hero-copy {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    text-align: center;
+    gap: 6px;
+  }
+
+  .hero-banner h1 {
+    margin: 0;
+    font-family: 'Poppins', sans-serif;
+    font-size: 48px;
+    line-height: 1.1;
+    color: var(--text);
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+  }
+
+  .hero-image {
+    position: relative;
+    height: 100%;
+    overflow: hidden;
+    border-radius: var(--radius);
+    border: 1px solid var(--border);
+    box-shadow: 0 10px 16px rgba(0,0,0,0.10);
+  }
+
+  .hero-image img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    filter: saturate(1.05);
+  }
+
+  .vehicle-thumb {
+    width: 44px;
+    height: 28px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid var(--border);
+    flex-shrink: 0;
+  }
+
+  .vehicle-preview-card {
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+  }
+
+  .vehicle-preview-img {
+    width: 100%;
+    height: 120px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .modal-car-photo {
+    margin-bottom: 16px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+    border: 1px solid var(--border);
+  }
+
+  .modal-car-photo img {
+    width: 100%;
+    height: 180px;
+    object-fit: cover;
+    display: block;
+  }
+
+  .tabs {
+    display: flex; gap: 2px;
+    padding: 14px 24px 0;
+    border-bottom: 1px solid rgba(16,185,129,0.24);
+    background: rgba(2, 12, 5, 0.94);
+  }
+
+  .tab {
+    padding: 9px 18px; border-radius: 8px 8px 0 0;
+    border: 1px solid transparent; border-bottom: none;
+    font-size: 13px; font-weight: 600; color: var(--text2);
+    cursor: pointer; transition: all 0.15s;
+    background: none; font-family: 'Syne', sans-serif;
+  }
+
+  .tab:hover { color: var(--text); }
+  .tab.active { background: var(--bg); border-color: var(--border); color: var(--text); }
+
+  .content { flex: 1; overflow-y: auto; padding: 24px; }
+  .panel { display: none; }
+  .panel.active { display: block; }
+
+  /* ─── PETA LANTAI ─────────────────────────── */
+  .floor-selector { display: flex; gap: 8px; margin-bottom: 20px; }
+
+  .floor-btn {
+    padding: 8px 22px; border-radius: var(--radius-sm);
+    border: 1px solid var(--border); background: var(--surface);
+    color: var(--text2); font-size: 13px; font-weight: 700;
+    cursor: pointer; transition: all 0.15s; font-family: 'Syne', sans-serif;
+  }
+
+  .floor-btn:hover { border-color: var(--border2); color: var(--text); }
+  .floor-btn.active { background: var(--green-bg); border-color: var(--green-dim); color: var(--green); }
+
+  .map-container {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 28px;
+    min-height: 560px;
+  }
+
+  .floor-label { font-size: 14px; font-weight: 700; color: var(--text2); margin-bottom: 16px; }
+
+  .map-legend { display: flex; gap: 24px; margin-bottom: 22px; flex-wrap: wrap; }
+
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text2); }
+  .legend-box { width: 20px; height: 16px; border-radius: 5px; }
+
+  .map-info {
+    background: var(--blue-bg); border: 1px solid var(--blue-dim);
+    border-radius: var(--radius-sm); padding: 12px 16px;
+    font-size: 13px; color: var(--blue); margin-bottom: 20px;
+    display: flex; align-items: center; gap: 10px;
+  }
+
+  .parking-grid { display: grid; gap: 18px; }
+
+  .parking-row { display: flex; gap: 10px; align-items: center; }
+
+  /* Simulasi jalan antar baris: setiap 2 baris diberi gap lebih besar via JS row-group */
+  .parking-row-group { display: flex; flex-direction: column; gap: 6px; }
+  .parking-aisle-gap { height: 18px; display: flex; align-items: center; padding-left: 26px; }
+  .parking-aisle-gap span { font-size: 9px; color: var(--text3); letter-spacing: 2px; text-transform: uppercase; }
+
+  .row-label {
+    font-family: 'DM Mono', monospace; font-size: 12px;
+    color: var(--text3); width: 28px; text-align: center; flex-shrink: 0;
+  }
+
+  .parking-slot {
+    width: 74px; height: 48px; border-radius: 10px;
+    border: 1.5px solid transparent; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 11px; font-family: 'DM Mono', monospace; font-weight: 600;
+    transition: all 0.18s; position: relative;
+  }
+
+  .parking-slot:hover { transform: scale(1.05); z-index: 5; }
+
+  .slot-empty { background: var(--green-bg); border-color: var(--green-dim); color: var(--green); }
+  .slot-empty:hover { background: #0d2a1e; border-color: var(--green); box-shadow: 0 0 12px rgba(31,224,160,0.25); }
+  .slot-occupied { background: var(--red-bg); border-color: var(--red-dim); color: var(--red); cursor: default; }
+  .slot-occupied:hover { transform: none; }
+  /* slot-reserved removed */
+
+  .aisle {
+    width: 54px; height: 38px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 9px; color: var(--text3); letter-spacing: 1px;
+  }
+
+  /* ─── KENDARAAN PANEL ─────────────────────── */
+  .vehicle-panel-grid {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 24px;
+  }
+
+  .entry-form {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 22px;
+  }
+
+  .form-title { font-size: 15px; font-weight: 700; margin-bottom: 18px; }
+
+  .form-row { margin-bottom: 14px; }
+
+  .form-label {
+    font-size: 11px; color: var(--text2); font-weight: 600;
+    margin-bottom: 6px; display: block; text-transform: uppercase; letter-spacing: 0.5px;
+  }
+
+  .form-input, .form-select {
+    width: 100%; padding: 10px 14px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: 'Syne', sans-serif; font-size: 13px;
+    transition: border-color 0.15s; outline: none;
+  }
+
+  .form-input:focus, .form-select:focus { border-color: var(--green-dim); }
+  .form-input::placeholder { color: var(--text3); }
+
+  .plate-input {
+    font-family: 'DM Mono', monospace; font-size: 16px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 2px;
+  }
+
+  .form-btn {
+    width: 100%; padding: 12px; background: var(--green); color: #000;
+    border: none; border-radius: var(--radius-sm); font-family: 'Syne', sans-serif;
+    font-size: 14px; font-weight: 700; cursor: pointer; transition: all 0.15s; margin-top: 4px;
+  }
+
+  .form-btn:hover { background: #12c48c; }
+  .form-btn:active { transform: scale(0.98); }
+
+  .bill-preview {
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); padding: 14px; margin: 12px 0;
+  }
+
+  .bill-row {
+    display: flex; justify-content: space-between; align-items: center;
+    font-size: 12px; padding: 4px 0;
+  }
+
+  .bill-row-key { color: var(--text2); }
+  .bill-row-val { font-family: 'DM Mono', monospace; font-weight: 500; }
+  .bill-total { font-size: 18px; font-weight: 700; color: var(--amber); }
+
+  .section-title {
+    font-size: 15px; font-weight: 700; margin-bottom: 16px;
+    display: flex; align-items: center; gap: 8px;
+  }
+
+  .badge-count {
+    background: var(--surface3); color: var(--text2);
+    border-radius: 20px; padding: 2px 8px; font-size: 11px;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .vehicle-table {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); overflow: hidden;
+  }
+
+  .table-header {
+    display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.4fr 1fr;
+    padding: 11px 20px; border-bottom: 1px solid var(--border);
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--text3);
+  }
+
+  .table-row {
+    display: grid; grid-template-columns: 1.6fr 1fr 1fr 1.4fr 1fr;
+    padding: 13px 20px; border-bottom: 1px solid var(--border);
+    font-size: 13px; transition: background 0.1s; align-items: center;
+  }
+
+  .table-row:hover { background: var(--surface2); }
+  .table-row:last-child { border-bottom: none; }
+
+  .plate-badge {
+    font-family: 'DM Mono', monospace; font-size: 12px; font-weight: 500;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 3px 8px; display: inline-block;
+  }
+
+  .exit-btn {
+    padding: 5px 12px;
+    background: var(--red-bg); border: 1px solid var(--red-dim);
+    color: var(--red); border-radius: var(--radius-sm);
+    font-size: 11px; font-weight: 700; cursor: pointer;
+    transition: all 0.15s; font-family: 'Syne', sans-serif;
+  }
+
+  .exit-btn:hover { background: var(--red-dim); color: #fff; }
+
+  .search-bar { display: flex; gap: 10px; margin-bottom: 16px; }
+
+  .search-input {
+    flex: 1; padding: 9px 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: 'Syne', sans-serif; font-size: 13px; outline: none;
+  }
+
+  .search-input:focus { border-color: var(--green-dim); }
+  .search-input::placeholder { color: var(--text3); }
+
+  /* ─── DASHBOARD ─────────────────────────── */
+  .dash-grid {
+    display: grid; grid-template-columns: repeat(3, 1fr);
+    gap: 14px; margin-bottom: 24px;
+  }
+
+  .dash-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 18px 20px;
+  }
+
+  .dash-card-label {
+    font-size: 10px; font-weight: 700; text-transform: uppercase;
+    letter-spacing: 1px; color: var(--text3); margin-bottom: 8px;
+  }
+
+  .dash-card-val {
+    font-family: 'DM Mono', monospace; font-size: 30px;
+    font-weight: 500; line-height: 1; margin-bottom: 4px;
+  }
+
+  .dash-card-sub { font-size: 12px; color: var(--text3); }
+
+  .chart-area {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px; margin-bottom: 16px;
+  }
+
+  .chart-title { font-size: 13px; font-weight: 700; margin-bottom: 16px; }
+
+  .bar-chart {
+    display: flex; align-items: flex-end; gap: 8px;
+    height: 130px; padding-bottom: 22px; position: relative;
+  }
+
+  .bar-chart::after {
+    content: ''; position: absolute;
+    bottom: 22px; left: 0; right: 0;
+    height: 1px; background: var(--border);
+  }
+
+  .bar-group {
+    flex: 1; display: flex; flex-direction: column;
+    align-items: center; gap: 4px; height: 100%; justify-content: flex-end;
+  }
+
+  .bar-fill {
+    width: 100%; border-radius: 4px 4px 0 0;
+    transition: height 0.8s ease; min-height: 4px;
+  }
+
+  .bar-label { font-size: 10px; color: var(--text3); text-align: center; margin-top: 4px; }
+
+  .two-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  /* ─── GATES ─────────────────────────── */
+  .gate-grid {
+    display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: 16px; margin-bottom: 24px;
+  }
+
+  .gate-card {
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: var(--radius); padding: 20px;
+  }
+
+  .gate-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 16px; }
+  .gate-name { font-weight: 700; font-size: 15px; }
+
+  .gate-status {
+    display: flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 700; padding: 4px 10px;
+    border-radius: 20px; letter-spacing: 0.5px;
+  }
+
+  .gate-open { background: var(--green-bg); color: var(--green); }
+  .gate-closed { background: var(--red-bg); color: var(--red); }
+
+  .gate-stats {
+    display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px;
+  }
+
+  .gate-stat { background: var(--surface2); border-radius: var(--radius-sm); padding: 10px; }
+  .gate-stat-label { font-size: 10px; color: var(--text3); margin-bottom: 3px; }
+  .gate-stat-val { font-family: 'DM Mono', monospace; font-size: 18px; font-weight: 500; }
+
+  .gate-btn {
+    width: 100%; padding: 10px; border-radius: var(--radius-sm);
+    border: 1px solid; font-family: 'Syne', sans-serif;
+    font-size: 13px; font-weight: 700; cursor: pointer; transition: all 0.15s;
+  }
+
+  .btn-open { background: var(--green-bg); border-color: var(--green-dim); color: var(--green); }
+  .btn-open:hover { background: var(--green-dim); color: #fff; }
+  .btn-close { background: var(--red-bg); border-color: var(--red-dim); color: var(--red); }
+  .btn-close:hover { background: var(--red-dim); color: #fff; }
+
+  /* ─── MODAL ─────────────────────────── */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: rgba(0,0,0,0.8); z-index: 200;
+    align-items: center; justify-content: center;
+  }
+
+  .modal-overlay.open { display: flex; }
+
+  .modal {
+    background: var(--surface); border: 1px solid var(--border2);
+    border-radius: 16px; padding: 28px; width: 420px; max-width: 92vw;
+    animation: modalIn 0.25s ease;
+  }
+
+  @keyframes modalIn { from{opacity:0;transform:scale(0.95)} to{opacity:1;transform:scale(1)} }
+
+  .modal-title { font-size: 18px; font-weight: 800; margin-bottom: 8px; }
+  .modal-subtitle { font-size: 12px; color: var(--text2); margin-bottom: 20px; }
+
+  .modal-row {
+    display: flex; justify-content: space-between;
+    padding: 9px 0; border-bottom: 1px solid var(--border); font-size: 13px;
+  }
+
+  .modal-row:last-of-type { border-bottom: none; }
+  .modal-row-key { color: var(--text2); }
+  .modal-row-val { font-weight: 600; font-family: 'DM Mono', monospace; font-size: 12px; }
+
+  .modal-plate-input {
+    width: 100%; padding: 14px; margin: 14px 0 8px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: var(--radius-sm); color: var(--text);
+    font-family: 'DM Mono', monospace; font-size: 20px; font-weight: 500;
+    text-transform: uppercase; letter-spacing: 3px; text-align: center; outline: none;
+    transition: border-color 0.15s;
+  }
+
+  .modal-plate-input:focus { border-color: var(--green); }
+  .modal-plate-input::placeholder { color: var(--text3); letter-spacing: 1px; font-size: 14px; }
+
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; }
+
+  .modal-btn {
+    flex: 1; padding: 11px; border-radius: var(--radius-sm);
+    font-family: 'Syne', sans-serif; font-size: 13px; font-weight: 700;
+    cursor: pointer; border: 1px solid var(--border);
+    background: var(--surface2); color: var(--text); transition: all 0.15s;
+  }
+
+  .modal-btn:hover { border-color: var(--border2); }
+
+  .modal-btn-primary {
+    background: var(--green); border-color: var(--green); color: #000;
+  }
+
+  .modal-btn-primary:hover { background: #12c48c; }
+
+  .modal-btn-red {
+    background: var(--red-bg); border-color: var(--red-dim); color: var(--red);
+  }
+
+  .modal-btn-red:hover { background: var(--red-dim); color: #fff; }
+
+  /* ─── TOAST ─────────────────────────── */
+  .toast-area {
+    position: fixed; bottom: 24px; right: 24px;
+    z-index: 999; display: flex; flex-direction: column; gap: 8px;
+  }
+
+  .toast {
+    background: var(--surface2); border: 1px solid var(--border2);
+    border-radius: var(--radius); padding: 12px 16px;
+    font-size: 13px; min-width: 260px; max-width: 340px;
+    animation: toastIn 0.3s ease; box-shadow: 0 8px 32px rgba(0,0,0,0.6);
+  }
+
+  @keyframes toastIn { from{opacity:0;transform:translateY(16px)} to{opacity:1;transform:translateY(0)} }
+
+  .toast-title { font-weight: 700; margin-bottom: 3px; }
+  .toast-body { color: var(--text2); font-size: 12px; }
+  .toast-green { border-left: 3px solid var(--green); }
+  .toast-red { border-left: 3px solid var(--red); }
+  .toast-amber { border-left: 3px solid var(--amber); }
+
+  .empty-state { text-align: center; padding: 36px; color: var(--text3); font-size: 13px; }
+
+  .duration-badge {
+    font-family: 'DM Mono', monospace; font-size: 11px;
+    background: var(--surface2); border: 1px solid var(--border);
+    border-radius: 4px; padding: 2px 7px; color: var(--text2);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">
+    <div class="logo-icon">🅿</div>
+    Smart <span>Parking</span> Mall
+  </div>
+  <div class="header-right">
+    <div class="live-badge"><div class="live-dot"></div> LIVE</div>
+    <div class="clock" id="clock">00:00:00</div>
+  </div>
+</header>
+
+<div class="app">
+
+  <!-- SIDEBAR -->
+  <aside>
+    <div class="sidebar-section">
+      <div class="sidebar-label">Kapasitas Parkir</div>
+
+      <div class="stat-card">
+        <div class="stat-top"><span class="stat-name">Total Kapasitas</span><span class="stat-icon">🏢</span></div>
+        <div class="stat-val clr-blue" id="s-total">232</div>
+        <div class="stat-sub">Semua lantai · Khusus Mobil</div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-top"><span class="stat-name">Tersedia</span><span class="stat-icon">✅</span></div>
+        <div class="stat-val clr-green" id="s-available">0</div>
+        <div class="stat-sub">Slot kosong saat ini</div>
+        <div class="progress-bar"><div class="progress-fill" id="avail-bar" style="background:var(--green)"></div></div>
+      </div>
+
+      <div class="stat-card">
+        <div class="stat-top"><span class="stat-name">Terisi</span><span class="stat-icon">🚗</span></div>
+        <div class="stat-val clr-red" id="s-occupied">0</div>
+        <div class="stat-sub">Kendaraan parkir</div>
+        <div class="progress-bar"><div class="progress-fill" id="occ-bar" style="background:var(--red)"></div></div>
+      </div>
+    </div>
+
+    <div class="sidebar-section">
+      <div class="sidebar-label">Tarif Parkir</div>
+      <div class="tariff-box">
+        <div class="tariff-row">
+          <span class="tariff-key">Jam Pertama</span>
+          <span class="tariff-val">Rp 5.000</span>
+        </div>
+        <div class="tariff-row">
+          <span class="tariff-key">Jam Berikutnya</span>
+          <span class="tariff-val">Rp 3.000 / jam</span>
+        </div>
+        <div class="tariff-row">
+          <span class="tariff-key">Jenis Kendaraan</span>
+          <span style="font-size:11px;color:var(--text2)">🚗 Mobil saja</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="entry-log">
+      <div class="sidebar-label">Log Aktivitas</div>
+      <div id="activity-log"><div style="font-size:12px;color:var(--text3);padding:8px 0">Belum ada aktivitas</div></div>
+    </div>
+  </aside>
+
+  <!-- MAIN -->
+  <main>
+    <div class="hero-banner">
+      <div class="hero-copy">
+        <h1>Smart Parking Mall</h1>
+      </div>
+      <div class="hero-image">
+        <img src="https://www.olx.co.id/news/wp-content/uploads/2024/04/parkiran-mobil.webp" alt="Kendaraan Parkir">
+      </div>
+    </div>
+    <div class="tabs">
+      <button class="tab active" onclick="switchTab('map')">🗺️ Peta Lantai</button>
+      <button class="tab" onclick="switchTab('dashboard')">📊 Dashboard</button>
+    </div>
+
+    <div class="content">
+
+      <!-- PETA LANTAI -->
+      <div class="panel active" id="panel-map">
+        <div class="floor-selector" id="floor-selector"></div>
+        <div class="map-container">
+          <div class="floor-label" id="map-floor-label">Lantai B1</div>
+          <div class="map-info">
+            ℹ️ Klik slot <strong style="color:var(--green)">hijau (kosong)</strong> untuk memilih tempat parkir. Klik slot <strong style="color:var(--red)">merah (terisi)</strong> untuk melihat detail.
+          </div>
+          <div class="map-legend">
+            <div class="legend-item"><div class="legend-box" style="background:var(--green-bg);border:1.5px solid var(--green-dim)"></div> Kosong — bisa dipilih</div>
+            <div class="legend-item"><div class="legend-box" style="background:var(--red-bg);border:1.5px solid var(--red-dim)"></div> Terisi</div>
+
+          </div>
+          <div class="parking-grid" id="parking-map"></div>
+        </div>
+      </div>
+
+      <!-- DASHBOARD -->
+      <div class="panel" id="panel-dashboard">
+        <div class="dash-grid">
+          <div class="dash-card">
+            <div class="dash-card-label">Tingkat Hunian</div>
+            <div class="dash-card-val clr-amber" id="d-occupancy">0%</div>
+            <div class="dash-card-sub">dari total 232 slot</div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-label">Masuk Hari Ini</div>
+            <div class="dash-card-val clr-blue" id="d-in">0</div>
+            <div class="dash-card-sub">kendaraan</div>
+          </div>
+          <div class="dash-card">
+            <div class="dash-card-label">Keluar Hari Ini</div>
+            <div class="dash-card-val clr-green" id="d-out">0</div>
+            <div class="dash-card-sub">kendaraan</div>
+          </div>
+        </div>
+
+        <div class="two-cols">
+          <div class="chart-area">
+            <div class="chart-title">Distribusi per Lantai</div>
+            <div class="bar-chart" id="floor-chart"></div>
+          </div>
+        </div>
+
+        <div style="margin-top:16px">
+          <div class="chart-area">
+            <div class="chart-title">Kendaraan Aktif — 10 Terakhir</div>
+            <div id="dash-vehicle-preview"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- KENDARAAN -->
+      <div class="panel" id="panel-vehicles">
+        <div class="vehicle-panel-grid">
+          <!-- MASUK -->
+          <div class="entry-form">
+            <div class="form-title">🚗 Kendaraan Masuk</div>
+            <div class="form-row">
+              <label class="form-label">Nomor Plat</label>
+              <input class="form-input plate-input" id="f-plate" placeholder="B 1234 XY" maxlength="12">
+            </div>
+            <div class="form-row">
+              <label class="form-label">Pilih Lantai</label>
+              <select class="form-select" id="f-floor">
+                <option value="B1">Lantai B1 (Basement 1)</option>
+                <option value="B2">Lantai B2 (Basement 2)</option>
+                <option value="L1">Lantai L1 (Level 1)</option>
+                <option value="L2">Lantai L2 (Level 2)</option>
+              </select>
+            </div>
+            <div class="form-row">
+              <label class="form-label">Pilih Slot Parkir</label>
+              <select class="form-select" id="f-slot">
+                <option value="">— Pilih slot kosong —</option>
+              </select>
+            </div>
+            <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;font-size:12px;color:var(--text2)">
+              💡 Atau klik langsung slot kosong di <strong style="color:var(--text)">Peta Lantai</strong>
+            </div>
+            <button class="form-btn" onclick="vehicleEnter()">✅ Catat Masuk</button>
+          </div>
+
+          <!-- KELUAR -->
+          <div class="entry-form" style="border-color:var(--red-dim)">
+            <div class="form-title">🚪 Kendaraan Keluar</div>
+            <div class="form-row">
+              <label class="form-label">Nomor Plat</label>
+              <input class="form-input plate-input" id="f-exit-plate" placeholder="B 1234 XY" maxlength="12" oninput="updateFeePreview()">
+            </div>
+            <div class="bill-preview" id="bill-preview-box">
+              <div class="bill-row"><span class="bill-row-key">Durasi</span><span class="bill-row-val" id="prev-duration">—</span></div>
+              <div class="bill-row"><span class="bill-row-key">Slot</span><span class="bill-row-val" id="prev-slot">—</span></div>
+              <div class="bill-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:10px">
+                <span class="bill-row-key" style="font-weight:700;color:var(--text)">Total Tagihan</span>
+                <span class="bill-row-val bill-total" id="prev-fee">—</span>
+              </div>
+            </div>
+            <button class="form-btn" style="background:var(--red)" onclick="vehicleExit()">🚪 Proses Keluar</button>
+          </div>
+        </div>
+
+        <div class="section-title">
+          Kendaraan Aktif
+          <span class="badge-count" id="active-count">0</span>
+        </div>
+        <div class="search-bar">
+          <input class="search-input" placeholder="🔍  Cari nomor plat..." id="search-input" oninput="renderVehicleList()">
+        </div>
+        <div class="vehicle-table">
+          <div class="table-header">
+            <div>Nomor Plat</div>
+            <div>Lantai</div>
+            <div>Slot</div>
+            <div>Masuk</div>
+            <div>Aksi</div>
+          </div>
+          <div id="vehicle-list-body"></div>
+        </div>
+      </div>
+
+      <!-- PINTU -->
+      <div class="panel" id="panel-gates">
+        <div class="gate-grid" id="gates-container"></div>
+        <div class="section-title">Log Pintu Masuk</div>
+        <div class="vehicle-table">
+          <div class="table-header" style="grid-template-columns:1fr 1fr 1fr 1fr">
+            <div>Pintu</div><div>Plat</div><div>Waktu</div><div>Status</div>
+          </div>
+          <div id="queue-body"></div>
+        </div>
+      </div>
+
+    </div>
+  </main>
+</div>
+
+<!-- MODAL: pilih slot dari peta -->
+<div class="modal-overlay" id="slot-modal">
+  <div class="modal">
+    <div class="modal-title" id="modal-title">Slot Parkir</div>
+    <div class="modal-subtitle" id="modal-subtitle"></div>
+    <div id="modal-content"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeModal()">Batal</button>
+      <button class="modal-btn modal-btn-primary" id="modal-action-btn" style="display:none">Konfirmasi</button>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL: konfirmasi keluar dari tabel -->
+<div class="modal-overlay" id="exit-modal">
+  <div class="modal">
+    <div class="modal-title">🚪 Konfirmasi Keluar</div>
+    <div class="modal-subtitle" id="exit-modal-sub"></div>
+    <div id="exit-modal-content"></div>
+    <div class="modal-actions">
+      <button class="modal-btn" onclick="closeExitModal()">Batal</button>
+      <button class="modal-btn modal-btn-red" id="exit-confirm-btn">Proses Keluar & Bayar</button>
+    </div>
+  </div>
+</div>
+
+<div class="toast-area" id="toast-area"></div>
+
+<script>
+// ─── KONSTANTA ────────────────────────────────────────────────
+const FLOORS = ['B1','B2','L1','L2'];
+const FLOOR_CAP = { B1:64, B2:64, L1:64, L2:40 };
+const COLS_PER_ROW = 8;
+const TOTAL = 232;
+const TARIFF_FIRST = 5000;
+const TARIFF_NEXT  = 3000;
+
+const GATES = [
+  { id:'G1', name:'Pintu Utara',  desc:'Gate A – Pintu Utama',    throughput:0, open:true  },
+  { id:'G2', name:'Pintu Selatan',desc:'Gate B – Pintu Belakang', throughput:0, open:true  },
+  { id:'G3', name:'Pintu Timur',  desc:'Gate C – Area Foodcourt', throughput:0, open:false },
+  { id:'G4', name:'Pintu Barat',  desc:'Gate D – Area Bioskop',   throughput:0, open:true  },
+];
+
+const CAR_IMAGES = [
+  'https://images.unsplash.com/photo-1511407397940-d57f68e81203?auto=format&fit=crop&w=800&q=60',
+  'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=60',
+  'https://images.unsplash.com/photo-1525609004556-c46c7d6cf023?auto=format&fit=crop&w=800&q=60',
+  'https://images.unsplash.com/photo-1515422399978-7c7cc051f7a2?auto=format&fit=crop&w=800&q=60',
+  'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=60',
+  'https://images.unsplash.com/photo-1511919884226-fd3cad34687c?auto=format&fit=crop&w=800&q=60',
+  'https://images.unsplash.com/photo-1542362567-b07e54358753?auto=format&fit=crop&w=800&q=60',
+  'https://images.unsplash.com/photo-1503376780353-7e6692767b70?auto=format&fit=crop&w=800&q=60'
+];
+const DEFAULT_CAR_IMAGE = 'https://images.unsplash.com/photo-1511407397940-d57f68e81203?auto=format&fit=crop&w=900&q=70';
+
+// ─── STATE ───────────────────────────────────────────────────
+let currentFloor = 'B1';
+let activeTab = 'map';
+let vehicles = [];     // { plate, floor, slot, slotId, entryTime }
+let dailyIn = 0, dailyOut = 0;
+let slotData = {};     // slotId → { status: 'empty'|'occupied'|'reserved', plate }
+let activityLog = [];
+let queueLog = [];
+let pendingSlotId = null; // untuk modal pilih slot dari peta
+
+// ─── HITUNG BIAYA ────────────────────────────────────────────
+function calcFee(entryTime) {
+  const ms = Date.now() - entryTime;
+  const hours = Math.ceil(ms / 3600000) || 1;
+  if (hours <= 1) return { hours, fee: TARIFF_FIRST };
+  return { hours, fee: TARIFF_FIRST + (hours - 1) * TARIFF_NEXT };
+}
+
+function fmtRp(n) { return 'Rp ' + n.toLocaleString('id-ID'); }
+
+function fmtDuration(ms) {
+  const h = Math.floor(ms / 3600000);
+  const m = Math.floor((ms % 3600000) / 60000);
+  return h > 0 ? `${h} jam ${m} mnt` : `${m} menit`;
+}
+
+// ─── INISIALISASI SLOT ───────────────────────────────────────
+function initSlots() {
+  FLOORS.forEach(floor => {
+    const cap = FLOOR_CAP[floor];
+    const rows = 'ABCDEFGH'.split('').slice(0, Math.ceil(cap / COLS_PER_ROW));
+    rows.forEach(row => {
+      for (let col = 1; col <= COLS_PER_ROW; col++) {
+        const id = `${floor}-${row}${col}`;
+        slotData[id] = { status: 'empty', plate: null };
+      }
+    });
+  });
+
+  // Isi secara random ~45% slot dari tiap lantai dengan kendaraan orang lain
+  const randomPlates = () => {
+    const prefixes = ['B','D','F','H','AB','BE','DA','KB','L','BK'];
+    const p = prefixes[Math.floor(Math.random()*prefixes.length)];
+    const num = String(Math.floor(Math.random()*9000)+1000);
+    const alpha = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
+    const suf = alpha[Math.floor(Math.random()*alpha.length)] + alpha[Math.floor(Math.random()*alpha.length)];
+    return `${p} ${num} ${suf}`;
+  };
+  const randomCarImage = () => CAR_IMAGES[Math.floor(Math.random() * CAR_IMAGES.length)];
+
+  const now = Date.now();
+  FLOORS.forEach(floor => {
+    const cap = FLOOR_CAP[floor];
+    const rows = 'ABCDEFGH'.split('').slice(0, Math.ceil(cap / COLS_PER_ROW));
+    const allSlotIds = [];
+    rows.forEach(row => {
+      for (let col = 1; col <= COLS_PER_ROW; col++) allSlotIds.push(`${floor}-${row}${col}`);
+    });
+    // Shuffle and pick ~45%
+    const shuffled = allSlotIds.sort(() => Math.random() - 0.5);
+    const fillCount = Math.floor(cap * 0.45);
+    shuffled.slice(0, fillCount).forEach(slotId => {
+      const plate = randomPlates();
+      slotData[slotId] = { status: 'occupied', plate };
+      const [fl, slot] = slotId.split('-');
+      vehicles.push({ plate, floor: fl, slot, slotId, entryTime: now - Math.random() * 3600000 * 4, image: randomCarImage() });
+      dailyIn++;
+    });
+  });
+
+  updateAll();
+
+  // Simulasi orang lain masuk & keluar secara random
+  function randomSimTick() {
+    const delay = 8000 + Math.random() * 12000; // 8–20 detik
+    setTimeout(() => {
+      const action = Math.random();
+      if (action < 0.45 && vehicles.length > 5) {
+        // Seseorang keluar secara random (slot merah → hijau)
+        const randomVehicle = vehicles[Math.floor(Math.random() * vehicles.length)];
+        if (randomVehicle) {
+          const idx = vehicles.indexOf(randomVehicle);
+          slotData[randomVehicle.slotId] = { status: 'empty', plate: null };
+          vehicles.splice(idx, 1);
+          dailyOut++;
+          addActivity('keluar', randomVehicle.plate, `Lantai ${randomVehicle.floor} — Slot ${randomVehicle.slot} (otomatis)`);
+          if (activeTab === 'map' && randomVehicle.floor === currentFloor) renderParkingMap();
+          updateAll();
+        }
+      } else {
+        // Seseorang masuk ke slot kosong secara random
+        const emptySlots = Object.entries(slotData).filter(([id, s]) => s.status === 'empty');
+        if (emptySlots.length > 10) {
+          const [slotId] = emptySlots[Math.floor(Math.random() * emptySlots.length)];
+          const plate = randomPlates();
+          slotData[slotId] = { status: 'occupied', plate };
+          const [fl, slot] = slotId.split('-');
+          vehicles.push({ plate, floor: fl, slot, slotId, entryTime: Date.now() });
+          dailyIn++;
+          addActivity('masuk', plate, `Lantai ${fl} — Slot ${slot} (otomatis)`);
+          if (activeTab === 'map' && fl === currentFloor) renderParkingMap();
+          updateAll();
+        }
+      }
+      randomSimTick();
+    }, delay);
+  }
+  randomSimTick();
+}
+
+// ─── CLOCK ───────────────────────────────────────────────────
+setInterval(() => {
+  document.getElementById('clock').textContent =
+    new Date().toLocaleTimeString('id-ID', { hour12: false });
+}, 1000);
+
+// ─── TABS ────────────────────────────────────────────────────
+function switchTab(tab) {
+  activeTab = tab;
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
+  document.querySelector(`.tab[onclick="switchTab('${tab}')"]`).classList.add('active');
+  document.getElementById('panel-' + tab).classList.add('active');
+  if (tab === 'map') renderParkingMap();
+  if (tab === 'gates') renderGates();
+}
+
+// ─── UPDATE ALL ───────────────────────────────────────────────
+function updateAll() {
+  const vals = Object.values(slotData);
+  const empty = vals.filter(s => s.status === 'empty').length;
+  const occupied = vals.filter(s => s.status === 'occupied').length;
+  const availPct = Math.round(empty / TOTAL * 100);
+  const occPct   = Math.round(occupied / TOTAL * 100);
+
+  document.getElementById('s-total').textContent = TOTAL;
+  document.getElementById('s-available').textContent = empty;
+  document.getElementById('s-occupied').textContent = occupied;
+  document.getElementById('avail-bar').style.width = availPct + '%';
+  document.getElementById('occ-bar').style.width = occPct + '%';
+  document.getElementById('d-occupancy').textContent = occPct + '%';
+  document.getElementById('d-in').textContent = dailyIn;
+  document.getElementById('d-out').textContent = dailyOut;
+  document.getElementById('active-count').textContent = vehicles.length;
+
+  populateSlotDropdown();
+  renderVehicleList();
+  renderDashboard();
+  renderActivityLog();
+  if (activeTab === 'map') renderParkingMap();
+  if (activeTab === 'gates') renderGates();
+}
+
+// ─── DROPDOWN SLOT PILIHAN ────────────────────────────────────
+function populateSlotDropdown() {
+  const floor = document.getElementById('f-floor')?.value || 'B1';
+  const sel = document.getElementById('f-slot');
+  if (!sel) return;
+  const prev = sel.value;
+  const slots = Object.entries(slotData)
+    .filter(([id, s]) => id.startsWith(floor + '-') && s.status === 'empty')
+    .map(([id]) => id.split('-')[1]);
+  sel.innerHTML = '<option value="">— Pilih slot kosong —</option>' +
+    slots.map(s => `<option value="${s}">${s}</option>`).join('');
+  if (prev) sel.value = prev;
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('f-floor')?.addEventListener('change', populateSlotDropdown);
+});
+
+// ─── KENDARAAN MASUK ─────────────────────────────────────────
+function vehicleEnter(plateOverride, floorOverride, slotOverride) {
+  const plate = (plateOverride || document.getElementById('f-plate').value.trim()).toUpperCase();
+  const floor = floorOverride || document.getElementById('f-floor').value;
+  const slot  = slotOverride  || document.getElementById('f-slot').value;
+
+  if (!plate) { showToast('Error', 'Masukkan nomor plat kendaraan.', 'red'); return; }
+  if (vehicles.find(v => v.plate === plate)) {
+    showToast('Error', 'Plat ' + plate + ' sudah terdaftar.', 'red'); return;
+  }
+  if (!slot) { showToast('Pilih Slot', 'Pilih slot parkir terlebih dahulu.', 'amber'); return; }
+
+  const slotId = `${floor}-${slot}`;
+  if (!slotData[slotId] || slotData[slotId].status !== 'empty') {
+    showToast('Slot Tidak Tersedia', 'Slot ' + slot + ' sudah terisi atau tidak tersedia.', 'amber'); return;
+  }
+
+  slotData[slotId] = { status: 'occupied', plate };
+  vehicles.push({ plate, floor, slot, slotId, entryTime: Date.now(), image: randomCarImage() });
+  dailyIn++;
+
+  const gate = GATES.filter(g => g.open)[Math.floor(Math.random() * GATES.filter(g => g.open).length)];
+  gate.throughput++;
+  queueLog.unshift({ gate: gate.name, plate, time: new Date(), status: 'Masuk' });
+  if (queueLog.length > 30) queueLog.pop();
+
+  addActivity('masuk', plate, `Lantai ${floor} — Slot ${slot}`);
+  showToast('✅ Kendaraan Masuk', `${plate} → Slot ${slot} (Lantai ${floor})`, 'green');
+  document.getElementById('f-plate').value = '';
+  document.getElementById('f-slot').value = '';
+  updateAll();
+}
+
+// ─── KENDARAAN KELUAR ─────────────────────────────────────────
+function vehicleExit(plateOverride) {
+  const plate = (plateOverride || document.getElementById('f-exit-plate').value.trim()).toUpperCase();
+  if (!plate) { showToast('Error', 'Masukkan nomor plat kendaraan.', 'red'); return; }
+
+  const idx = vehicles.findIndex(v => v.plate === plate);
+  if (idx === -1) {
+    showToast('Tidak Ditemukan', `Plat ${plate} tidak ada dalam sistem.`, 'red'); return;
+  }
+
+  const v = vehicles[idx];
+  const { hours, fee } = calcFee(v.entryTime);
+  const durMs = Date.now() - v.entryTime;
+
+  slotData[v.slotId] = { status: 'empty', plate: null };
+  vehicles.splice(idx, 1);
+  dailyOut++;
+
+  const gate = GATES.filter(g => g.open)[0];
+  gate.throughput++;
+  queueLog.unshift({ gate: gate.name, plate, time: new Date(), status: 'Keluar' });
+
+  addActivity('keluar', plate, `Durasi: ${fmtDuration(durMs)} — ${fmtRp(fee)}`);
+  showToast('🚪 Kendaraan Keluar', `${plate} — ${fmtDuration(durMs)} — Tagihan: ${fmtRp(fee)}`, 'amber');
+  document.getElementById('f-exit-plate').value = '';
+  resetFeePreview();
+  updateAll();
+}
+
+function updateFeePreview() {
+  const plate = document.getElementById('f-exit-plate').value.trim().toUpperCase();
+  const v = vehicles.find(v => v.plate === plate);
+  if (v) {
+    const { hours, fee } = calcFee(v.entryTime);
+    const durMs = Date.now() - v.entryTime;
+    document.getElementById('prev-duration').textContent = fmtDuration(durMs) + ` (${hours} jam dibulatkan)`;
+    document.getElementById('prev-slot').textContent = `Lantai ${v.floor} — Slot ${v.slot}`;
+    document.getElementById('prev-fee').textContent = fmtRp(fee);
+  } else { resetFeePreview(); }
+}
+
+function resetFeePreview() {
+  document.getElementById('prev-duration').textContent = '—';
+  document.getElementById('prev-slot').textContent = '—';
+  document.getElementById('prev-fee').textContent = '—';
+}
+
+// ─── QUICK EXIT dari tabel ────────────────────────────────────
+function quickExitConfirm(plate) {
+  const v = vehicles.find(v => v.plate === plate);
+  if (!v) return;
+  const { hours, fee } = calcFee(v.entryTime);
+  const durMs = Date.now() - v.entryTime;
+
+  document.getElementById('exit-modal-sub').textContent = `Plat: ${plate}`;
+  document.getElementById('exit-modal-content').innerHTML = `
+    <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin-bottom:4px">
+      <div class="bill-row"><span class="bill-row-key">Lantai & Slot</span><span class="bill-row-val">Lantai ${v.floor} — Slot ${v.slot}</span></div>
+      <div class="bill-row"><span class="bill-row-key">Waktu Masuk</span><span class="bill-row-val">${new Date(v.entryTime).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span></div>
+      <div class="bill-row"><span class="bill-row-key">Durasi</span><span class="bill-row-val">${fmtDuration(durMs)}</span></div>
+      <div class="bill-row"><span class="bill-row-key">Dihitung</span><span class="bill-row-val">${hours} jam</span></div>
+      <div class="bill-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:10px">
+        <span style="font-weight:700;color:var(--text);font-size:13px">Total Tagihan</span>
+        <span style="font-family:DM Mono,monospace;font-weight:500;font-size:20px;color:var(--amber)">${fmtRp(fee)}</span>
+      </div>
+    </div>`;
+  document.getElementById('exit-confirm-btn').onclick = () => {
+    closeExitModal();
+    document.getElementById('f-exit-plate').value = plate;
+    vehicleExit(plate);
+  };
+  document.getElementById('exit-modal').classList.add('open');
+}
+
+function closeExitModal() {
+  document.getElementById('exit-modal').classList.remove('open');
+}
+document.getElementById('exit-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeExitModal();
+});
+
+// ─── RENDER VEHICLE LIST ──────────────────────────────────────
+function renderVehicleList() {
+  const search = (document.getElementById('search-input')?.value || '').toUpperCase();
+  const filtered = vehicles.filter(v => v.plate.includes(search));
+  const body = document.getElementById('vehicle-list-body');
+  if (!body) return;
+
+  if (filtered.length === 0) {
+    body.innerHTML = '<div class="empty-state">Tidak ada kendaraan aktif</div>'; return;
+  }
+
+  const now = Date.now();
+  body.innerHTML = filtered.map(v => {
+    const durMs = now - v.entryTime;
+    return `<div class="table-row">
+      <div style="display:flex;align-items:center;gap:10px">
+        <img class="vehicle-thumb" src="${v.image || DEFAULT_CAR_IMAGE}" alt="Foto ${v.plate}">
+        <span class="plate-badge">${v.plate}</span>
+      </div>
+      <div>Lantai ${v.floor}</div>
+      <div style="font-family:'DM Mono',monospace;font-size:12px;font-weight:500">${v.slot}</div>
+      <div>
+        <span class="duration-badge">${fmtDuration(durMs)}</span>
+        <div style="font-size:11px;color:var(--text3);margin-top:3px">${new Date(v.entryTime).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div>
+      </div>
+      <div><button class="exit-btn" onclick="quickExitConfirm('${v.plate}')">Keluar</button></div>
+    </div>`;
+  }).join('');
+}
+
+// ─── PETA LANTAI ──────────────────────────────────────────────
+function renderFloorButtons() {
+  document.getElementById('floor-selector').innerHTML = FLOORS.map(f =>
+    `<button class="floor-btn ${f === currentFloor ? 'active' : ''}" onclick="selectFloor('${f}')">Lantai ${f}</button>`
+  ).join('');
+}
+
+function selectFloor(f) {
+  currentFloor = f;
+  renderFloorButtons();
+  renderParkingMap();
+}
+
+function renderParkingMap() {
+  renderFloorButtons();
+  const cap = FLOOR_CAP[currentFloor];
+  const rows = 'ABCDEFGH'.split('').slice(0, Math.ceil(cap / COLS_PER_ROW));
+  const emptyCount = Object.entries(slotData).filter(([id,s]) => id.startsWith(currentFloor+'-') && s.status === 'empty').length;
+  document.getElementById('map-floor-label').textContent =
+    `Lantai ${currentFloor} — Kapasitas ${cap} Slot — ${emptyCount} Kosong`;
+
+  document.getElementById('parking-map').innerHTML = rows.map((row, rowIdx) => {
+    const slots = [];
+    for (let col = 1; col <= COLS_PER_ROW; col++) {
+      const id = `${currentFloor}-${row}${col}`;
+      const s = slotData[id];
+      if (!s) continue;
+      const cls = { empty:'slot-empty', occupied:'slot-occupied', reserved:'slot-reserved' }[s.status];
+      const label = s.status === 'occupied'
+        ? (s.plate?.slice(-4) || '●')
+        : `${row}${col}`;
+      const title = s.status === 'occupied' ? `${id} — ${s.plate}` : id;
+      slots.push(`<div class="parking-slot ${cls}" title="${title}" onclick="slotClick('${id}')">${label}</div>`);
+      if (col === 4) slots.push(`<div class="aisle">┃</div>`);
+    }
+    // Insert aisle gap after every 2 rows
+    const aisleAfter = (rowIdx % 2 === 1 && rowIdx < rows.length - 1)
+      ? `<div class="parking-aisle-gap"><span>◀ JALAN ▶</span></div>` : '';
+    return `<div class="parking-row"><div class="row-label">${row}</div>${slots.join('')}</div>${aisleAfter}`;
+  }).join('');
+}
+
+// ─── KLIK SLOT DARI PETA ──────────────────────────────────────
+function slotClick(id) {
+  const s = slotData[id];
+  const titleEl = document.getElementById('modal-title');
+  const subtitleEl = document.getElementById('modal-subtitle');
+  const contentEl = document.getElementById('modal-content');
+  const actionBtn = document.getElementById('modal-action-btn');
+  titleEl.textContent = 'Slot ' + id;
+
+  if (s.status === 'empty') {
+    subtitleEl.textContent = 'Slot ini kosong dan siap digunakan.';
+    contentEl.innerHTML = `
+      <div class="modal-car-photo"><img src="${DEFAULT_CAR_IMAGE}" alt="Slot kosong"></div>
+      <div style="background:var(--green-bg);border:1px solid var(--green-dim);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px;color:var(--green);font-size:13px;font-weight:600">
+        ✅ Slot Tersedia
+      </div>
+      <label class="form-label">Masukkan Nomor Plat Mobil</label>
+      <input class="modal-plate-input" id="modal-plate-field" placeholder="contoh: B 1234 XY" maxlength="12">
+      <div style="font-size:11px;color:var(--text3);margin-top:6px">Tarif: Rp 5.000 jam pertama, Rp 3.000 jam berikutnya</div>`;
+    actionBtn.textContent = '✅ Konfirmasi Parkir';
+    actionBtn.className = 'modal-btn modal-btn-primary';
+    actionBtn.style.display = '';
+    actionBtn.onclick = () => {
+      const plate = document.getElementById('modal-plate-field')?.value.trim().toUpperCase();
+      if (!plate) { showToast('Error', 'Masukkan nomor plat.', 'red'); return; }
+      const [floor, slot] = id.split('-');
+      closeModal();
+      vehicleEnter(plate, floor, slot);
+    };
+  } else if (s.status === 'occupied') {
+    const v = vehicles.find(v => v.slotId === id);
+    if (!v) { subtitleEl.textContent = ''; contentEl.innerHTML = '<div style="color:var(--text2);font-size:13px">Data tidak ditemukan.</div>'; actionBtn.style.display='none'; document.getElementById('slot-modal').classList.add('open'); return; }
+    const { hours, fee } = calcFee(v.entryTime);
+    const durMs = Date.now() - v.entryTime;
+    subtitleEl.textContent = `Kendaraan: ${s.plate}`;
+    contentEl.innerHTML = `
+      <div class="modal-car-photo"><img src="${v.image || DEFAULT_CAR_IMAGE}" alt="Foto ${s.plate}"></div>
+      <div style="background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px">
+        <div class="bill-row"><span class="bill-row-key">Nomor Plat</span><span class="bill-row-val" style="font-size:14px">${s.plate}</span></div>
+        <div class="bill-row"><span class="bill-row-key">Waktu Masuk</span><span class="bill-row-val">${new Date(v.entryTime).toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</span></div>
+        <div class="bill-row"><span class="bill-row-key">Durasi</span><span class="bill-row-val">${fmtDuration(durMs)}</span></div>
+        <div class="bill-row" style="border-top:1px solid var(--border);margin-top:6px;padding-top:10px">
+          <span style="font-weight:700;color:var(--text)">Estimasi Tagihan</span>
+          <span style="font-family:DM Mono,monospace;font-weight:500;font-size:18px;color:var(--amber)">${fmtRp(fee)}</span>
+        </div>
+      </div>`;
+    actionBtn.textContent = '🚪 Proses Keluar';
+    actionBtn.className = 'modal-btn modal-btn-red';
+    actionBtn.style.display = '';
+    actionBtn.onclick = () => { closeModal(); quickExitConfirm(v.plate); };
+  }
+
+  document.getElementById('slot-modal').classList.add('open');
+}
+
+function closeModal() { document.getElementById('slot-modal').classList.remove('open'); }
+document.getElementById('slot-modal').addEventListener('click', function(e) { if (e.target === this) closeModal(); });
+
+// ─── GATES ───────────────────────────────────────────────────
+function renderGates() {
+  const empty = Object.values(slotData).filter(s => s.status === 'empty').length;
+  document.getElementById('gates-container').innerHTML = GATES.map(g => `
+    <div class="gate-card">
+      <div class="gate-header">
+        <div>
+          <div class="gate-name">${g.name}</div>
+          <div style="font-size:12px;color:var(--text2);margin-top:2px">${g.desc}</div>
+        </div>
+        <div class="gate-status ${g.open ? 'gate-open' : 'gate-closed'}">${g.open ? '🟢 BUKA' : '🔴 TUTUP'}</div>
+      </div>
+      <div class="gate-stats">
+        <div class="gate-stat">
+          <div class="gate-stat-label">Kendaraan Hari Ini</div>
+          <div class="gate-stat-val clr-blue">${g.throughput}</div>
+        </div>
+        <div class="gate-stat">
+          <div class="gate-stat-label">Slot Tersedia</div>
+          <div class="gate-stat-val ${empty > 20 ? 'clr-green' : 'clr-amber'}">${empty}</div>
+        </div>
+      </div>
+      <button class="gate-btn ${g.open ? 'btn-close' : 'btn-open'}" onclick="toggleGate('${g.id}')">
+        ${g.open ? '🔒 Tutup Pintu' : '🔓 Buka Pintu'}
+      </button>
+    </div>`).join('');
+
+  const qb = document.getElementById('queue-body');
+  qb.innerHTML = queueLog.length === 0
+    ? '<div class="empty-state">Belum ada aktivitas</div>'
+    : queueLog.slice(0,15).map(q => `
+        <div class="table-row" style="grid-template-columns:1fr 1fr 1fr 1fr">
+          <div>${q.gate}</div>
+          <div><span class="plate-badge">${q.plate}</span></div>
+          <div style="font-size:12px;color:var(--text2)">${q.time.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit'})}</div>
+          <div><span style="font-size:11px;font-weight:700;padding:3px 8px;border-radius:20px;${q.status==='Masuk'?'background:var(--green-bg);color:var(--green)':'background:var(--amber-bg);color:var(--amber)'}">${q.status}</span></div>
+        </div>`).join('');
+
+  const gsl = document.getElementById('gate-status-list');
+  if (gsl) gsl.innerHTML = GATES.map(g => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-size:13px;font-weight:600">${g.name}</div>
+        <div style="font-size:11px;color:var(--text3)">${g.desc}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <div style="font-family:'DM Mono',monospace;font-size:13px;color:var(--blue)">${g.throughput}</div>
+        <div class="gate-status ${g.open?'gate-open':'gate-closed'}" style="font-size:11px;padding:3px 8px">${g.open?'🟢 BUKA':'🔴 TUTUP'}</div>
+      </div>
+    </div>`).join('');
+}
+
+function toggleGate(id) {
+  const g = GATES.find(g => g.id === id);
+  g.open = !g.open;
+  showToast(`Pintu ${g.open ? 'Dibuka' : 'Ditutup'}`, `${g.name} sekarang ${g.open ? 'buka' : 'tutup'}.`, g.open ? 'green' : 'amber');
+  renderGates();
+}
+
+// ─── DASHBOARD CHARTS ─────────────────────────────────────────
+function renderDashboard() {
+  // Floor chart
+  const fc = document.getElementById('floor-chart');
+  if (fc) {
+    const floorOcc = {};
+    vehicles.forEach(v => { floorOcc[v.floor] = (floorOcc[v.floor] || 0) + 1; });
+    const cols = ['var(--blue)', 'var(--green)', 'var(--amber)', 'var(--red)'];
+    fc.innerHTML = FLOORS.map((f, i) => {
+      const occ = floorOcc[f] || 0;
+      const pct = Math.round((occ / FLOOR_CAP[f]) * 100);
+      return `<div class="bar-group">
+        <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:2px">${occ}</div>
+        <div class="bar-fill" style="height:${Math.max(pct,4)}%;background:${cols[i]}"></div>
+        <div class="bar-label">${f}</div>
+      </div>`;
+    }).join('');
+  }
+
+  // Gate status in dashboard
+  // (dihapus — bagian Status Pintu Masuk tidak ditampilkan di dashboard)
+
+  // Vehicle preview
+  const dvp = document.getElementById('dash-vehicle-preview');
+  if (dvp) {
+    if (vehicles.length === 0) {
+      dvp.innerHTML = '<div class="empty-state">Tidak ada kendaraan aktif</div>';
+    } else {
+      const now = Date.now();
+      dvp.innerHTML = `<div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px">` +
+        vehicles.slice(0,10).map((v, i) => {
+          const { fee } = calcFee(v.entryTime);
+          const durMs = now - v.entryTime;
+          return `<div class="vehicle-preview-card">
+            <img class="vehicle-preview-img" src="${v.image || DEFAULT_CAR_IMAGE}" alt="Foto ${v.plate}">
+            <div style="padding:12px">
+              <div style="font-size:11px;font-weight:700;color:var(--text2);margin-bottom:6px">Kendaraan #${i+1}</div>
+              <div style="font-size:13px;color:var(--text);font-weight:700;margin-bottom:4px">${v.plate}</div>
+              <div style="font-size:11px;color:var(--text2)">Lantai ${v.floor} — Slot ${v.slot}</div>
+              <div style="font-size:11px;color:var(--text3);margin-top:6px">${fmtDuration(durMs)}</div>
+              <div style="font-size:13px;color:var(--amber);font-weight:700;margin-top:10px">${fmtRp(fee)}</div>
+            </div>
+          </div>`;
+        }).join('') + `</div>`;
+    }
+  }
+}
+
+// ─── ACTIVITY LOG ─────────────────────────────────────────────
+function addActivity(type, plate, detail) {
+  activityLog.unshift({ type, plate, detail, time: new Date() });
+  if (activityLog.length > 50) activityLog.pop();
+}
+
+function renderActivityLog() {
+  const el = document.getElementById('activity-log');
+  if (!el) return;
+  if (activityLog.length === 0) {
+    el.innerHTML = '<div style="font-size:12px;color:var(--text3);padding:8px 0">Belum ada aktivitas</div>'; return;
+  }
+  el.innerHTML = activityLog.slice(0, 25).map(a => `
+    <div class="log-item">
+      <div class="log-dot" style="background:${a.type==='masuk'?'var(--green)':'var(--amber)'}"></div>
+      <div>
+        <div class="log-text"><span class="log-plate">${a.plate}</span> — ${a.type.toUpperCase()}</div>
+        <div style="font-size:11px;color:var(--text3)">${a.detail}</div>
+        <div class="log-time">${a.time.toLocaleTimeString('id-ID',{hour:'2-digit',minute:'2-digit',second:'2-digit'})}</div>
+      </div>
+    </div>`).join('');
+}
+
+// ─── TOAST ───────────────────────────────────────────────────
+function showToast(title, body, type = 'green') {
+  const area = document.getElementById('toast-area');
+  const t = document.createElement('div');
+  t.className = `toast toast-${type}`;
+  t.innerHTML = `<div class="toast-title">${title}</div><div class="toast-body">${body}</div>`;
+  area.appendChild(t);
+  setTimeout(() => t.remove(), 4500);
+}
+
+// ─── INIT ────────────────────────────────────────────────────
+initSlots();
+renderFloorButtons();
+renderParkingMap();
+renderGates();
+
+// Update durasi kendaraan aktif setiap menit
+setInterval(() => {
+  if (vehicles.length > 0) {
+    renderVehicleList();
+    renderDashboard();
+  }
+}, 60000);
+</script>
+</body>
+</html>
