@@ -1473,7 +1473,7 @@ function renderDashboard() {
       return `<div class="bar-group">
         <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-bottom:2px">${occ}</div>
         <div class="bar-fill" style="height:${Math.max(pct,4)}%;background:${cols[i]}"></div>
-        <div class="bar-label">${f}</div>
+        <div class="bar-label" style="color:${cols[i]};font-weight:700">${f}</div>
       </div>`;
     }).join('');
   }
